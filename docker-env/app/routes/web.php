@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\PostController;
+use Illuminate\Support\Facades\Auth;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -14,3 +16,9 @@
 Route::get('/', function () {
     return view('home');
 });
+
+
+Auth::routes();
+
+Route::get('/home', [PostController::class, 'index'])->name('home');
+Route::get('/mypage', [PostController::class, 'mypage'])->name('mypage')->middleware('auth');
