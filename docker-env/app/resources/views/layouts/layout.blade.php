@@ -25,21 +25,17 @@
         <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
             <div class="container d-flex justify-content-between align-items-center">
 
-                {{-- 左：ロゴ --}}
                 <a class="navbar-brand" href="{{ url('/') }}">
                     <img src="{{ asset('images/logo.png') }}" alt="Logo" height="40">
                 </a>
 
-                {{-- 中央：検索フォーム --}}
                 <div style="flex: 1; max-width: 500px;" class="mx-3">
                     <input type="text" placeholder="検索ワードを入力" class="form-control" style="display: inline-block; width: 70%;">
                     <button class="btn btn-outline-secondary" style="width: 28%;">さがす</button>
                 </div>
 
-                {{-- 右：ログイン/ログアウト/登録 --}}
                 <div class="my-navber-control">
                     @if(Auth::check())
-                        {{-- ユーザー名をリンクにしてmypageへ飛ばす --}}
                         <a href="{{ route('mypage') }}" class="my-navber-item">{{ Auth::user()->username }}</a>
                         /
                         <a href="#" id="logout" class="my-navber-item">ログアウト</a>
@@ -63,5 +59,6 @@
 
         @yield('content')
     </div>
+    @yield('scripts')
 </body>
 </html>

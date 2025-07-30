@@ -34,13 +34,13 @@
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-header">
-                        <div class='text-center'>[新規投稿する]</div>
+                        <a href="{{ route('create.create_select') }}" class="text-center">[新規投稿する]</a>
                     </div>
                 </div>
 
                 <div class="card mt-2">
                     <div class="card-header">
-                        <div class='text-center'>[アカウント設定]</div>
+                        <a href="{{ route('user.user_edit', ['id' => Auth::id()]) }}" class="text-center">[アカウント設定]</a>
                     </div>
                 </div>
             </div>
