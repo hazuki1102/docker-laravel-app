@@ -25,16 +25,19 @@
         <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
             <div class="container d-flex justify-content-between align-items-center">
 
-                <a class="navbar-brand" href="{{ url('/') }}">
-                    <img src="{{ asset('images/logo.png') }}" alt="Logo" height="40">
-                </a>
-
-                <div style="flex: 1; max-width: 500px;" class="mx-3">
-                    <input type="text" placeholder="検索ワードを入力" class="form-control" style="display: inline-block; width: 70%;">
-                    <button class="btn btn-outline-secondary" style="width: 28%;">さがす</button>
+                <div class="d-flex align-items-center">
+                    <a href="{{ url('/') }}">
+                        <img src="{{ asset('images/logo.png') }}" alt="ロゴ" style="height: 50px;">
+                    </a>
                 </div>
 
-                <div class="my-navber-control">
+                <form action="{{ route('search.post_search') }}" method="GET" style="max-width: 700px; flex-grow: 1;" class="d-flex align-items-center ms-4">
+                    <input type="text" name="keyword" placeholder="検索ワードを入力" class="form-control me-2" style="flex-grow: 1;">
+                    <button class="btn btn-outline-secondary" style="min-width: 80px; white-space: nowrap;">さがす</button>
+                </form>
+
+
+                <div class="my-navber-control ms-4">
                     @if(Auth::check())
                         <a href="{{ route('mypage') }}" class="my-navber-item">{{ Auth::user()->username }}</a>
                         /

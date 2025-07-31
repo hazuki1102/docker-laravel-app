@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
+use App\Models\Product;
+
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
@@ -18,7 +20,11 @@ class PostController extends Controller
      */
     public function index()
     {
-        return view('home');
+        $posts = Post::with('user')
+                    ->orderBy('created_at', 'desc')
+                    ->paginate(12);
+
+        return view('home', compact('posts'));
     }
 
     /**
@@ -105,11 +111,8 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit()
     {
-        if ($id != Auth::id()) {
-            abort(403, 'Unauthorized action.');
-        }
         $user = Auth::user();
         return view('user.user_edit', compact('user'));
     }
@@ -121,9 +124,41 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
-        //
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'username' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'password' => 'nullable|string|min:8|confirmed',
+            'profile' => 'nullable|string|max:1000',
+            'icon_path' => 'nullable|string',
+        ]);
+
+        if (!empty($validated['icon_path'])) {
+            $tmpPath = 'public/' . $validated['icon_path'];
+            $newPath = 'public/icons/' . basename($tmpPath);
+            Storage::move($tmpPath, $newPath);
+            $validated['icon_path'] = str_replace('public/', '', $newPath);
+
+        }
+
+        $user->username = $validated['username'];
+        $user->email = $validated['email'];
+        $user->profile = $validated['profile'] ?? null;
+
+        if (!empty($validated['icon_path'])) {
+            $user->icon_path = $validated['icon_path'];
+        }
+
+        if (!empty($validated['password'])) {
+            $user->password = bcrypt($validated['password']);
+        }
+
+        $user->save();
+
+        return redirect()->route('mypage')->with('success', 'プロフィールを更新しました。');
     }
 
     /**
@@ -139,8 +174,13 @@ class PostController extends Controller
 
     public function mypage()
     {
-        return view('mypage');
+        $user = Auth::user();
+
+        $posts = Post::where('user_id', $user->id)->latest()->paginate(10);
+
+        return view('mypage', compact('user', 'posts'));
     }
+
     public function select()
     {
         return view('create.create_select');
@@ -166,7 +206,12 @@ class PostController extends Controller
 
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             $tempPath = $request->file('image')->store('tmp');
+
+            $imageData = base64_encode(Storage::get($tempPath));
+            $mimeType = Storage::mimeType($tempPath);
+
             $validated['temp_image_path'] = $tempPath;
+            $validated['image_base64'] = "data:$mimeType;base64,$imageData";
         } else {
             return back()->withErrors(['image' => '画像のアップロードに失敗しました。'])->withInput();
         }
@@ -174,18 +219,103 @@ class PostController extends Controller
         return view('create.create_post_conf', ['data' => $validated]);
     }
 
+    public function productConf(Request $request)
+    {
+        $validated = $request->validate([
+            'file' => 'required|file|max:10240',
+            'title' => 'required|string|max:30',
+            'caption' => 'nullable|string',
+            'tags' => 'nullable|string|max:255',
+            'price' => 'required|integer|min:0',
+        ]);
+
+        if ($request->hasFile('file') && $request->file('file')->isValid()) {
+            $tempPath = $request->file('file')->store('tmp');
+        } else {
+            return back()->withErrors(['file' => 'ファイルのアップロードに失敗しました。'])->withInput();
+        }
+
+        $productData = [
+            'file_path' => $tempPath,
+            'title' => $validated['title'],
+            'caption' => $validated['caption'] ?? null,
+            'tags' => $validated['tags'] ?? null,
+            'price' => $validated['price'],
+        ];
+
+        $request->session()->put('product_data', $productData);
+
+        return view('create.create_product_conf', ['data' => $productData]);
+    }
 
 
-    public function productConf()
+
+    public function productStore(Request $request)
     {
-        return view('create.create_product_conf');
+        $data = $request->session()->get('product_data');
+
+        if (!$data || !isset($data['file_path']) || !Storage::exists($data['file_path'])) {
+            return redirect()->route('create.create_product')->withErrors(['file' => '一時ファイルが見つかりません。再アップロードしてください。']);
+        }
+
+        $filename = basename($data['file_path']);
+        $finalPath = 'public/products/' . $filename;
+        Storage::move($data['file_path'], $finalPath);
+
+        Product::create([
+            'user_id' => Auth::id(),
+            'title' => $data['title'],
+            'price' => $data['price'],
+            'file_path' => 'storage/products/' . $filename,
+            'post_id' => null,
+        ]);
+
+        $request->session()->forget('product_data');
+
+        return redirect()->route('mypage')->with('success', '素材の投稿が完了しました。');
     }
-        public function editConf()
+
+
+
+    public function editConf(Request $request)
     {
-        return view('user.edit_conf');
+        $validated = $request->validate([
+            'username' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'password' => 'nullable|string|min:8|confirmed',
+            'profile' => 'nullable|string|max:1000',
+            'icon' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        if ($request->hasFile('icon')) {
+            $path = $request->file('icon')->store('public/tmp_icons');
+            $validated['icon_path'] = str_replace('public/', '', $path);
+        } else {
+            $validated['icon_path'] = $request->input('current_icon_path', null);
+        }
+
+        return view('user.edit_conf', ['data' => $validated]);
     }
-        public function deleteConf()
+
+    public function deleteConf()
     {
-        return view('user.delete_conf');
+        $user = Auth::user();
+        return view('user.delete_conf', compact('user'));
     }
+
+    public function search(Request $request)
+    {
+        $keyword = $request->input('keyword');
+
+        if (!empty($keyword)) {
+            $posts = Post::where('title', 'like', "%{$keyword}%")
+                        ->orWhere('body', 'like', "%{$keyword}%")
+                        ->paginate(10);
+        } else {
+            $posts = Post::paginate(10);
+        }
+
+        return view('search.post_search', compact('posts', 'keyword'));
+    }
+
 }

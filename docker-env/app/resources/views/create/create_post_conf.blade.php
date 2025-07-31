@@ -9,7 +9,7 @@
         <div class="card mx-auto" style="max-width:600px;">
             <div class="card-header text-center"><strong>投稿画像</strong></div>
             <div class="card-body text-center">
-                <img src="{{ Storage::url($data['temp_image_path']) }}" alt="投稿画像" class="img-fluid">
+                <img src="{{ $data['image_base64'] }}" alt="投稿画像" class="img-fluid">
             </div>
             <div class="card-body">
                 <p><strong>タイトル：</strong>{{ $data['title'] }}</p>
