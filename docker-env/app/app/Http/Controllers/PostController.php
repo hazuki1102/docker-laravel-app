@@ -111,10 +111,15 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit()
+    public function edit($id)
     {
-        $user = Auth::user();
-        return view('user.user_edit', compact('user'));
+        $post = Post::findOrFail($id);
+
+        if (auth()->id() !== $post->user_id) {
+            return redirect()->route('posts.show', $id);
+        }
+
+        return view('edit.post_edit', compact('post'));
     }
 
     /**
@@ -302,6 +307,13 @@ class PostController extends Controller
         $user = Auth::user();
         return view('user.delete_conf', compact('user'));
     }
+    public function deletePostConf($id)
+    {
+        $post = Post::findOrFail($id);
+
+        return view('edit.post_delete_conf', compact('post'));
+    }
+
 
     public function search(Request $request)
     {
@@ -317,5 +329,17 @@ class PostController extends Controller
 
         return view('search.post_search', compact('posts', 'keyword'));
     }
+
+    public function myPost($id)
+    {
+        $post = Post::findOrFail($id);
+
+        if (auth()->id() !== $post->user_id) {
+            return redirect()->route('posts.show', $id);
+        }
+
+        return view('my_post', compact('post'));
+    }
+
 
 }

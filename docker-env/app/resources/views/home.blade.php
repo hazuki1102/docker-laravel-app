@@ -23,9 +23,17 @@
                 <div class="d-flex flex-wrap justify-content-center gap-3">
                     @forelse ($posts ?? '' as $post)
                         <div style="flex: 0 0 18%; max-width: 120px;" class="text-center">
-                            <img src="{{ url($post->image_path) }}" alt="投稿画像"
-                                class="img-thumbnail rounded"
-                                style="aspect-ratio: 1/1; object-fit: cover;">
+                            <a href="
+                                @auth
+                                    {{ Auth::id() === $post->user_id ? route('mypost.show', $post->id) : route('posts.show', $post->id) }}
+                                @else
+                                    {{ route('posts.show', $post->id) }}
+                                @endauth
+                            ">
+                                <img src="{{ url($post->image_path) }}" alt="投稿画像"
+                                    class="img-thumbnail rounded"
+                                    style="aspect-ratio: 1/1; object-fit: cover;">
+                            </a>
 
                             <div class="mt-1">
                                 <small class="d-block text-truncate">{{ $post->title }}</small>
@@ -37,7 +45,6 @@
                     @endforelse
                 </div>
             </div>
-        </div>
 
         <div class="text-center mt-4">
             {{ $posts ?? ''->links() }}

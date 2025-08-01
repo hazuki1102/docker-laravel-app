@@ -44,5 +44,19 @@ Route::post('/product/store', 'PostController@productStore')->name('product.stor
 
 Route::get('/post_search', 'PostController@search')->name('search.post_search');
 
+Route::get('/mypost/{id}', 'PostController@myPost')->name('mypost.show');
 
+Route::get('/post/{id}/edit', 'PostController@edit')->name('post.edit');
+Route::post('/post/{id}/edit_conf', 'PostController@editConf')->name('post.edit_conf');
 
+// 投稿詳細ページ
+Route::get('/post/{id}', 'PostController@show')->name('posts.show');
+
+// ブックマーク保存（POST）
+Route::post('/post/{id}/bookmark', 'BookmarkController@store')->name('bookmark.store');
+
+// 投稿削除確認画面
+Route::get('/post/{id}/delete_conf', 'PostController@deletePostConf')->name('post_delete_conf');
+
+// 投稿削除処理（DELETE）
+Route::delete('/post/{id}', 'PostController@destroy')->name('post.delete');
