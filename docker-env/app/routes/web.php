@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\BookmarkController;
 
 /*
 |--------------------------------------------------------------------------
@@ -60,3 +61,11 @@ Route::get('/post/{id}/delete_conf', 'PostController@deletePostConf')->name('pos
 
 // 投稿削除処理（DELETE）
 Route::delete('/post/{id}', 'PostController@destroy')->name('post.delete');
+
+// コメント機能
+Route::post('/post/{id}/comment', [CommentController::class, 'store'])->name('comments.store');
+
+// ブックマーク機能
+Route::post('/bookmark/{id}', [BookmarkController::class, 'store'])->name('bookmark.store');
+// ブックマーク一覧
+Route::get('/bookmarks', [BookmarkController::class, 'index'])->name('bookmark_list');

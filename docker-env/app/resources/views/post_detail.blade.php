@@ -65,5 +65,42 @@
 
         </div>
     </div>
+    <div class="row justify-content-center mt-5">
+    <div class="col-md-8">
+
+        <div class="card">
+            <div class="card-header">コメントする</div>
+            <div class="card-body">
+                <form action="{{ route('comments.store', $post->id) }}" method="POST">
+                    @csrf
+                    <div class="form-group">
+                        <textarea name="comment" rows="3" class="form-control" placeholder="コメントを入力">{{ old('comment') }}</textarea>
+                        @error('comment')
+                            <div class="text-danger mt-2">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-2">送信</button>
+                </form>
+            </div>
+        </div>
+        <div class="card mt-4">
+            <div class="card-header">コメント一覧</div>
+            <div class="card-body">
+                @forelse ($post->comments as $comment)
+                    <div class="mb-3">
+                        <strong>{{ $comment->user->username }}</strong>
+                        <small class="text-muted">（{{ $comment->created_at->format('Y/m/d H:i') }}）</small>
+                        <p class="mb-0">{{ $comment->content }}</p>
+                        <hr>
+                    </div>
+                @empty
+                    <p>コメントはまだありません。</p>
+                @endforelse
+            </div>
+        </div>
+
+    </div>
+</div>
+
 </main>
 @endsection
