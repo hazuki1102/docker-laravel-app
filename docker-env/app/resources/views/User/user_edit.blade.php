@@ -18,18 +18,22 @@
 
         <form action="{{ route('user.edit_conf') }}" method="POST" enctype="multipart/form-data">
             @csrf
+                @php
+                    $iconPath = !empty($data['icon_path']) && file_exists(public_path('storage/' . $data['icon_path']))
+                        ? asset('storage/' . $data['icon_path'])
+                        : asset('images/sample_icon.png');
+                @endphp
 
-            <div class="mb-3 text-center">
-                <img
-                    src="{{ asset('storage/' . ($data['icon_path'] ?? 'sample_icon.png')) }}"
-                    alt="現在のアイコン"
-                    class="rounded-circle"
-                    width="120"
-                    height="120"
-                    style="object-fit: cover;"
-                >
-            </div>
-
+                <div class="mb-3 text-center">
+                    <img
+                        src="{{ $iconPath }}"
+                        alt="現在のアイコン"
+                        class="rounded-circle"
+                        width="120"
+                        height="120"
+                        style="object-fit: cover;"
+                    >
+                </div>
             <div class="mb-3 text-center">
                 <label for="icon" class="form-label">アイコンを編集する</label>
                 <input type="file" name="icon" id="icon" class="form-control @error('icon') is-invalid @enderror" accept="image/*">
@@ -47,7 +51,6 @@
                     class="form-control @error('username') is-invalid @enderror"
                     placeholder="ユーザー名を入力"
                     value="{{ old('username', $data['username'] ?? '') }}"
-                    required
                 >
                 @error('name')
                     <div class="invalid-feedback">{{ $message }}</div>
@@ -63,7 +66,6 @@
                     class="form-control @error('email') is-invalid @enderror"
                     placeholder="example@example.com"
                     value="{{ old('email', $data['email'] ?? '') }}"
-                    required
                 >
                 @error('email')
                     <div class="invalid-feedback">{{ $message }}</div>

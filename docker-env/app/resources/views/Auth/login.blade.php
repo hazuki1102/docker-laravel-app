@@ -32,7 +32,7 @@
             </form>
           </div>
             <div class="text-center">
-              <a href="{{ route('password.request') }}">※パスワードが不明な場合</a>
+              <a href="{{ route('reset.form') }}">※パスワードが不明な場合</a>
             </div>
 
             <div class="text-center">

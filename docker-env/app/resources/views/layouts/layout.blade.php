@@ -57,6 +57,13 @@
                         <a class="my-navber-item" href="{{ route('register') }}">会員登録</a>
                     @endif
                 </div>
+                @auth
+                    @if (Auth::user()->is_admin)
+                        <div class="nav-item">
+                            <a class="nav-link" href="{{ route('ownerpage') }}">管理者ページ</a>
+                        </div>
+                    @endif
+                @endauth
             </div>
         </nav>
 

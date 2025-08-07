@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use App\Models\Product;
+use Illuminate\Support\Facades\DB;
+
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -18,14 +20,40 @@ class PostController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
-    {
-        $posts = Post::with('user')
-                    ->orderBy('created_at', 'desc')
-                    ->paginate(12);
+        public function index()
+        {
+            $posts = Post::with('user')
+                ->select('id', 'user_id', 'title', 'image_path', 'created_at')
+                ->get()
+                ->each(function ($item) {
+                    $item->type = 'post';
+                });
 
-        return view('home', compact('posts'));
-    }
+            $products = Product::with('user')
+                ->select('id', 'user_id', 'title', DB::raw("file_path as image_path"), 'created_at')
+                ->get()
+                ->each(function ($item) {
+                    $item->type = 'product';
+                });
+
+            $merged = $posts->merge($products)->sortByDesc('created_at')->values();
+
+
+            // ページネーション（10件ごと）
+            $currentPage = request()->input('page', 1);
+            $perPage = 10;
+            $paged = $merged->slice(($currentPage - 1) * $perPage, $perPage)->values();
+            $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                $paged,
+                $merged->count(),
+                $perPage,
+                $currentPage,
+                ['path' => request()->url(), 'query' => request()->query()]
+            );
+
+            return view('home', ['posts' => $paginator]);
+        }
+
 
     /**
      * Show the form for creating a new resource.
@@ -136,8 +164,8 @@ class PostController extends Controller
         $user = Auth::user();
 
         $validated = $request->validate([
-            'username' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'username' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:8|confirmed',
             'profile' => 'nullable|string|max:1000',
             'icon_path' => 'nullable|string',
@@ -151,8 +179,8 @@ class PostController extends Controller
 
         }
 
-        $user->username = $validated['username'];
-        $user->email = $validated['email'];
+        $user->username = $validated['username'] ?? $user->username;
+        $user->email = $validated['email'] ?? $user->email;
         $user->profile = $validated['profile'] ?? null;
 
         if (!empty($validated['icon_path'])) {
@@ -226,35 +254,43 @@ class PostController extends Controller
         return view('create.create_post_conf', ['data' => $validated]);
     }
 
-    public function productConf(Request $request)
-    {
-        $validated = $request->validate([
-            'file' => 'required|file|max:10240',
-            'title' => 'required|string|max:30',
-            'caption' => 'nullable|string',
-            'tags' => 'nullable|string|max:255',
-            'price' => 'required|integer|min:0',
-        ]);
+        public function productConf(Request $request)
+        {
+            $validated = $request->validate([
+                'file' => 'required|file|max:10240',
+                'title' => 'required|string|max:30',
+                'caption' => 'nullable|string',
+                'tags' => 'nullable|string|max:255',
+                'price' => 'required|integer|min:0',
+            ]);
 
-        if ($request->hasFile('file') && $request->file('file')->isValid()) {
-            $tempPath = $request->file('file')->store('tmp');
-        } else {
-            return back()->withErrors(['file' => 'ファイルのアップロードに失敗しました。'])->withInput();
+            if ($request->hasFile('file') && $request->file('file')->isValid()) {
+                $tempPath = $request->file('file')->store('tmp');
+            } else {
+                return back()->withErrors(['file' => 'ファイルのアップロードに失敗しました。'])->withInput();
+            }
+
+            $extension = strtolower($request->file('file')->getClientOriginalExtension());
+            $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif']);
+
+            $productData = [
+                'file_path' => $tempPath,
+                'title' => $validated['title'],
+                'caption' => $validated['caption'] ?? null,
+                'tags' => $validated['tags'] ?? null,
+                'price' => $validated['price'],
+            ];
+
+            if ($isImage) {
+                $imageData = base64_encode(Storage::get($tempPath));
+                $mimeType = Storage::mimeType($tempPath);
+                $productData['image_base64'] = "data:$mimeType;base64,$imageData";
+            }
+
+            $request->session()->put('product_data', $productData);
+
+            return view('create.create_product_conf', ['data' => $productData]);
         }
-
-        $productData = [
-            'file_path' => $tempPath,
-            'title' => $validated['title'],
-            'caption' => $validated['caption'] ?? null,
-            'tags' => $validated['tags'] ?? null,
-            'price' => $validated['price'],
-        ];
-
-        $request->session()->put('product_data', $productData);
-
-        return view('create.create_product_conf', ['data' => $productData]);
-    }
-
 
 
     public function productStore(Request $request)
@@ -287,8 +323,8 @@ class PostController extends Controller
     public function editConf(Request $request)
     {
         $validated = $request->validate([
-            'username' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
+            'username' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
             'password' => 'nullable|string|min:8|confirmed',
             'profile' => 'nullable|string|max:1000',
             'icon' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -303,6 +339,7 @@ class PostController extends Controller
 
         return view('user.edit_conf', ['data' => $validated]);
     }
+
 
     public function deleteConf()
     {
@@ -341,6 +378,31 @@ class PostController extends Controller
         }
 
         return view('my_post', compact('post'));
+    }
+
+    public function myProduct($id)
+    {
+        $product = Product::with('user')->findOrFail($id);
+
+        if (auth()->id() !== $product->user_id) {
+            return redirect()->route('product.show', $id);
+        }
+
+        return view('my_product', compact('product'));
+    }
+
+
+        public function editAccount()
+    {
+        $user = Auth::user();
+        return view('user.user_edit', compact('user'));
+    }
+
+
+    public function showProduct($id)
+    {
+        $product = Product::with('user')->findOrFail($id);
+        return view('product_detail', compact('product'));
     }
 
 

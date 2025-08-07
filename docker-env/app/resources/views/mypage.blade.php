@@ -51,7 +51,7 @@
 
                 <div class="card">
                     <div class="card-header text-center">
-                        <a href="{{ route('user.user_edit', ['id' => Auth::id()]) }}" class="text-decoration-none">
+                        <a href="{{ route('user.edit', ['id' => $user->id]) }}">
                             アカウント設定
                         </a>
                     </div>

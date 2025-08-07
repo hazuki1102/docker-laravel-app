@@ -25,6 +25,10 @@
                         @enderror
                         <div class="mt-3">
                             <span id="fileName"></span>
+                                <!-- 画像プレビューを表示 -->
+                                <div id="imagePreview" class="mt-2">
+                                    <img id="previewImg" src="#" alt="画像プレビュー" style="max-width: 100%; display: none;">
+                                </div>
                         </div>
                     </div>
                 </div>
@@ -90,9 +94,25 @@
 @section('scripts')
 <script>
 document.getElementById('fileInput').addEventListener('change', function(e) {
-    const [file] = e.target.files;
-    document.getElementById('fileName').textContent = file ? file.name : '';
+    const file = e.target.files[0];
+    const fileNameDisplay = document.getElementById('fileName');
+    const previewImg = document.getElementById('previewImg');
+
+    fileNameDisplay.textContent = file ? file.name : '';
+
+    if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            previewImg.src = event.target.result;
+            previewImg.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        previewImg.style.display = 'none';
+        previewImg.src = '#';
+    }
 });
+
 document.getElementById('tags').addEventListener('input', function() {
     let val = this.value.trim();
     if (val && val[0] !== '#') {

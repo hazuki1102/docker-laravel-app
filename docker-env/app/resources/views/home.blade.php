@@ -22,15 +22,26 @@
             <div class="card-body">
                 <div class="d-flex flex-wrap justify-content-center gap-3">
                     @forelse ($posts ?? '' as $post)
-                        <div style="flex: 0 0 18%; max-width: 120px;" class="text-center">
-                            <a href="
-                                @auth
-                                    {{ Auth::id() === $post->user_id ? route('mypost.show', $post->id) : route('posts.show', $post->id) }}
-                                @else
-                                    {{ route('posts.show', $post->id) }}
-                                @endauth
-                            ">
-                                <img src="{{ url($post->image_path) }}" alt="投稿画像"
+                        @php
+                            $isProduct = $post->type === 'product';
+                            $imageUrl = Str::startsWith($post->image_path, 'http')
+                                ? $post->image_path
+                                : asset($post->image_path);
+
+                            if ($isProduct) {
+                                $link = Auth::check() && Auth::id() === $post->user_id
+                                    ? route('myproduct.show', $post->id)
+                                    : route('product.show', $post->id);
+                            } else {
+                                $link = Auth::check() && Auth::id() === $post->user_id
+                                    ? route('mypost.show', $post->id)
+                                    : route('posts.show', $post->id);
+                            }
+                        @endphp
+
+                        <div style="flex: 0 0 18%; max-width: 18%;" class="text-center">
+                            <a href="{{ $link }}">
+                                <img src="{{ $imageUrl }}" alt="投稿画像"
                                     class="img-thumbnail rounded"
                                     style="aspect-ratio: 1/1; object-fit: cover;">
                             </a>
@@ -46,9 +57,12 @@
                 </div>
             </div>
 
-        <div class="text-center mt-4">
-            {{ $posts ?? ''->links() }}
-            <div class="mt-2">＜1.2.3.次のページへ＞</div>
+            <div class="row mt-4">
+                <div class="col d-flex justify-content-center">
+                    {{ $posts->links() }}
+                </div>
+            </div>
+
         </div>
     </div>
 </main>

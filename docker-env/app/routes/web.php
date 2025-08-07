@@ -2,7 +2,9 @@
 
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\BookmarkController;
-
+use App\Http\Controllers\UsersController;
+use App\Http\Controllers\CommentController;
+use App\Http\Controllers\AdminController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -31,6 +33,9 @@ Route::post('/create/post_conf', 'PostController@postConf')->name('create.post_c
 Route::get('/user/edit', 'PostController@edit')->name('user.user_edit');
 
 
+Route::get('/user/edit', 'PostController@editAccount')->name('user.edit');
+
+
 Route::post('/user/edit_conf', 'PostController@editConf')->name('user.edit_conf');
 Route::get('/user/delete_conf', 'PostController@deleteConf')->name('user.delete_conf');
 
@@ -53,6 +58,10 @@ Route::post('/post/{id}/edit_conf', 'PostController@editConf')->name('post.edit_
 // 投稿詳細ページ
 Route::get('/post/{id}', 'PostController@show')->name('posts.show');
 
+Route::get('/product/{id}', 'PostController@show')->name('product.show');
+Route::get('/myproduct/{id}', 'PostController@myProduct')->name('myproduct.show');
+
+
 // ブックマーク保存（POST）
 Route::post('/post/{id}/bookmark', 'BookmarkController@store')->name('bookmark.store');
 
@@ -69,3 +78,25 @@ Route::post('/post/{id}/comment', [CommentController::class, 'store'])->name('co
 Route::post('/bookmark/{id}', [BookmarkController::class, 'store'])->name('bookmark.store');
 // ブックマーク一覧
 Route::get('/bookmarks', [BookmarkController::class, 'index'])->name('bookmark_list');
+
+
+// Laravel 6 向けのルート定義に書き換え
+Route::prefix('reset')->group(function () {
+    Route::get('/', [UsersController::class, 'requestResetPassword'])->name('reset.form');
+    Route::post('/send', [UsersController::class, 'sendResetPasswordMail'])->name('reset.send');
+    Route::get('/send/complete', [UsersController::class, 'sendCompleteResetPasswordMail'])->name('reset.send.complete');
+    Route::get('/password/edit', [UsersController::class, 'resetPassword'])->name('reset.password.edit');
+    Route::post('/password/update', [UsersController::class, 'updatePassword'])->name('reset.password.update');
+});
+Route::get('/reset-test', function () {
+    return 'Reset Route OK';
+});
+
+//管理ユーザーページ
+Route::middleware(['auth', 'admin'])->group(function () {
+    Route::get('/ownerpage', [AdminController::class, 'index'])->name('ownerpage');
+    Route::get('/user_list', [AdminController::class, 'userList'])->name('user.list');
+    Route::get('/post_list', [AdminController::class, 'postList'])->name('post.list');
+});
+
+

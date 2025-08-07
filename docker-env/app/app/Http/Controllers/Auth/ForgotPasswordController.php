@@ -22,7 +22,7 @@ class ForgotPasswordController extends Controller
 
     public function showLinkRequestForm()
     {
-        return view('Auth.pwd_reset');
+        return view('Auth.reset_input_mail');
     }
 
 }
