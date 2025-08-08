@@ -14,11 +14,13 @@
             <div class="col-md-4">
                 <div class="card mb-3">
                     <div class="card-header text-center">
-                        <a href="{{ route('bookmark_list') }}" class="btn btn-outline-secondary">ブックマーク一覧</a>
+                        <a href="{{ route('bookmark_list') }}" class="text-decoration-none">ブックマーク一覧</a>
                     </div>
                 </div>
                 <div class="card">
-                    <div class="card-header text-center">[購入製品一覧]</div>
+                    <div class="card-header text-center">
+                        <a href="{{ route('purchase_list') }}" class="text-decoration-none">購入製品一覧</a>
+                    </div>
                 </div>
             </div>
 

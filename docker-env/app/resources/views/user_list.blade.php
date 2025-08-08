@@ -29,7 +29,7 @@
                 <td>{{ $user->posts_count }}</td>
                 <td>{{ $user->bookmarks_count }}</td>
                 <td>
-                    <a href="{{ url('/user_page?user_id=' . $user->id) }}" class="btn btn-sm btn-outline-secondary">詳細</a>
+                    <a href="{{ route('users.show', $user->id) }}" class="btn btn-sm btn-outline-secondary">詳細</a>
                 </td>
             </tr>
             @endforeach

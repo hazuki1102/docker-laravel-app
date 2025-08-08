@@ -31,7 +31,7 @@
                 <td>{{ $post->bookmarks_count }}</td>
                 <td>{{ $post->created_at->format('Y-m-d H:i') }}</td>
                 <td>
-                    <a href="{{ url('/post_detail?post_id=' . $post->id) }}" class="btn btn-sm btn-outline-secondary">詳細</a>
+                    <a href="{{ route('posts.show', $post->id) }}" class="btn btn-sm btn-outline-secondary">詳細</a>
                 </td>
             </tr>
             @endforeach

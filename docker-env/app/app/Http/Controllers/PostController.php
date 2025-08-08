@@ -89,7 +89,7 @@ class PostController extends Controller
 
         $newPath = 'public/images/' . basename($tempImagePath);
         Storage::move($tempImagePath, $newPath);
-        $imageUrl = Storage::url($newPath);
+        $dbPath = str_replace('public/', '', $newPath);
 
         Post::create([
             'user_id' => Auth::id(),
@@ -97,7 +97,7 @@ class PostController extends Controller
             'body' => $request->input('body', ''),
             'hashtags' => $request->input('hashtags', ''),
             'materials' => $request->input('materials', ''),
-            'image_path' => $imageUrl,
+            'image_path' => $dbPath,
         ]);
 
         return redirect()->route('posts.index')->with('success', '投稿が完了しました。');
@@ -211,7 +211,7 @@ class PostController extends Controller
     {
         $user = Auth::user();
 
-        $posts = Post::where('user_id', $user->id)->latest()->paginate(10);
+        $posts = Post::where('user_id', $user->id)->latest()->paginate(5);
 
         return view('mypage', compact('user', 'posts'));
     }
@@ -309,7 +309,7 @@ class PostController extends Controller
             'user_id' => Auth::id(),
             'title' => $data['title'],
             'price' => $data['price'],
-            'file_path' => 'storage/products/' . $filename,
+            'file_path' => 'products/' . $filename,
             'post_id' => null,
         ]);
 
@@ -405,5 +405,9 @@ class PostController extends Controller
         return view('product_detail', compact('product'));
     }
 
+    public function getImageUrlAttribute()
+    {
+        return $this->image_path ? Storage::url($this->image_path) : null;
+    }
 
 }

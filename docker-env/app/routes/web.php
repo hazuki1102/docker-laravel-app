@@ -97,6 +97,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/ownerpage', [AdminController::class, 'index'])->name('ownerpage');
     Route::get('/user_list', [AdminController::class, 'userList'])->name('user.list');
     Route::get('/post_list', [AdminController::class, 'postList'])->name('post.list');
+    Route::get('/admin/users/{user}', [AdminController::class, 'showUser'])->name('users.show');
+    Route::get('/admin/posts/{post}', [AdminController::class, 'showPost'])->name('posts.show');
 });
 
 
+//購入製品ページ（あるだけ）
+Route::get('/purchase_list', function () {
+    return view('purchase_list');
+})->name('purchase_list');

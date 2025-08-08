@@ -16,4 +16,9 @@ class Product extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function getImageUrlAttribute()
+    {
+        return $this->file_path ? Storage::url($this->file_path) : null;
+    }
 }

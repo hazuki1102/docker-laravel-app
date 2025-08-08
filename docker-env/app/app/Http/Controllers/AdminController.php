@@ -41,4 +41,24 @@ class AdminController extends Controller
 
         return view('post_list', compact('posts'));
     }
+
+    public function showUser(User $user)
+    {
+        $user->loadCount(['posts', 'bookmarks'])
+            ->load(['posts' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }]);
+
+        return view('user_show', compact('user'));
+    }
+
+    public function showPost(Post $post)
+    {
+        $post->loadCount('bookmarks')
+            ->load(['user', 'comments.user']);
+
+        return view('post_show', compact('post'));
+    }
+
+
 }
