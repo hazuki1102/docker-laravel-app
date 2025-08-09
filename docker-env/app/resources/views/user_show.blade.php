@@ -35,13 +35,24 @@
                         <td>{{ $post->title }}</td>
                         <td>{{ $post->created_at->format('Y-m-d H:i') }}</td>
                         <td>
-                            <a href="{{ url('/post_detail?post_id=' . $post->id) }}" class="btn btn-sm btn-outline-secondary">詳細</a>
+                            <a href="{{ route('posts.show', $post->id) }}" class="btn btn-sm btn-outline-secondary">
+                                詳細
+                            </a>
                         </td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
     @endif
+    <form method="POST" action="{{ route('users.destroy', $user->id) }}"
+      onsubmit="return confirm('このユーザーを削除します。よろしいですか？');">
+    @csrf
+    @method('DELETE')
+    <button type="submit" class="btn btn-danger"
+            {{ $user->is_admin ? 'disabled' : '' }}>
+        ユーザーを削除
+    </button>
+    </form>
 
     <a href="{{ route('user.list') }}" class="btn btn-secondary mt-3">← ユーザー一覧に戻る</a>
 </div>

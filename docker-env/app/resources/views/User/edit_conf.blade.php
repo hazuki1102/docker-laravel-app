@@ -11,11 +11,21 @@
                     @csrf
 
                     <div class="mb-4 text-center">
-                        @if (!empty($data['icon_path']))
-                            <img src="{{ asset('storage/' . $data['icon_path']) }}" alt="アイコン" class="rounded-circle" width="120" height="120" style="object-fit: cover;">
-                        @else
-                            <img src="{{ asset('storage/sample_icon.png') }}" alt="アイコン" class="rounded-circle" width="120" height="120">
-                        @endif
+                        @php
+                            use Illuminate\Support\Facades\Storage;
+
+                            $relPath = $data['icon_path']
+                                ?? $data['current_icon_path']
+                                ?? null;
+
+                            $iconUrl = $relPath ? Storage::url($relPath) : asset('images/sample_icon.png');
+                        @endphp
+
+                        <img src="{{ $iconUrl }}" alt="アイコン"
+                            class="rounded-circle" width="120" height="120" style="object-fit: cover;">
+
+                        <input type="hidden" name="icon_path" value="{{ $data['icon_path'] ?? '' }}">
+
                     </div>
 
                     <div class="mb-3">

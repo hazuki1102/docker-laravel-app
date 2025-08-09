@@ -19,8 +19,8 @@
         <form action="{{ route('user.edit_conf') }}" method="POST" enctype="multipart/form-data">
             @csrf
                 @php
-                    $iconPath = !empty($data['icon_path']) && file_exists(public_path('storage/' . $data['icon_path']))
-                        ? asset('storage/' . $data['icon_path'])
+                    $iconPath = Auth::user()->icon_path
+                        ? asset('storage/' . Auth::user()->icon_path)
                         : asset('images/sample_icon.png');
                 @endphp
 

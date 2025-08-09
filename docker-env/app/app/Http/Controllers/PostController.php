@@ -172,16 +172,15 @@ class PostController extends Controller
         ]);
 
         if (!empty($validated['icon_path'])) {
-            $tmpPath = 'public/' . $validated['icon_path'];
-            $newPath = 'public/icons/' . basename($tmpPath);
-            Storage::move($tmpPath, $newPath);
-            $validated['icon_path'] = str_replace('public/', '', $newPath);
-
+            $from = $validated['icon_path'];
+            $to   = 'icons/' . basename($from);
+            Storage::disk('public')->move($from, $to);
+            $user->icon_path = $to;
         }
 
         $user->username = $validated['username'] ?? $user->username;
-        $user->email = $validated['email'] ?? $user->email;
-        $user->profile = $validated['profile'] ?? null;
+        $user->email    = $validated['email'] ?? $user->email;
+        $user->profile  = $validated['profile'] ?? null;
 
         if (!empty($validated['icon_path'])) {
             $user->icon_path = $validated['icon_path'];
@@ -195,6 +194,7 @@ class PostController extends Controller
 
         return redirect()->route('mypage')->with('success', 'プロフィールを更新しました。');
     }
+
 
     /**
      * Remove the specified resource from storage.
@@ -319,26 +319,25 @@ class PostController extends Controller
     }
 
 
+        public function editConf(Request $request)
+        {
+            $validated = $request->validate([
+                'username' => 'nullable|string|max:255',
+                'email' => 'nullable|email|max:255',
+                'password' => 'nullable|string|min:8|confirmed',
+                'profile' => 'nullable|string|max:1000',
+                'icon' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            ]);
 
-    public function editConf(Request $request)
-    {
-        $validated = $request->validate([
-            'username' => 'nullable|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'password' => 'nullable|string|min:8|confirmed',
-            'profile' => 'nullable|string|max:1000',
-            'icon' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
+            if ($request->hasFile('icon') && $request->file('icon')->isValid()) {
+                $tmpPath = $request->file('icon')->store('tmp/icons', 'public');
+                $validated['icon_path'] = $tmpPath;
+            }
 
-        if ($request->hasFile('icon')) {
-            $path = $request->file('icon')->store('public/tmp_icons');
-            $validated['icon_path'] = str_replace('public/', '', $path);
-        } else {
-            $validated['icon_path'] = $request->input('current_icon_path', null);
+            $validated['current_icon_path'] = optional(\Auth::user())->icon_path;
+
+            return view('user.edit_conf', ['data' => $validated]);
         }
-
-        return view('user.edit_conf', ['data' => $validated]);
-    }
 
 
     public function deleteConf()

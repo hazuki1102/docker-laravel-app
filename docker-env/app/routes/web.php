@@ -99,6 +99,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/post_list', [AdminController::class, 'postList'])->name('post.list');
     Route::get('/admin/users/{user}', [AdminController::class, 'showUser'])->name('users.show');
     Route::get('/admin/posts/{post}', [AdminController::class, 'showPost'])->name('posts.show');
+    Route::delete('/admin/users/{user}', [AdminController::class, 'destroyUser'])->name('users.destroy');
 });
 
 
