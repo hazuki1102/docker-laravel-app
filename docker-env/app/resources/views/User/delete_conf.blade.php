@@ -9,7 +9,7 @@
 
                 <p class="text-center mb-4">本当にアカウントを削除してよろしいですか？<br>削除すると復元できません。</p>
 
-                <form action="{{ route('user.delete_conf') }}" method="POST">
+                <form action="{{ route('user.destroy') }}" method="POST">
                     @csrf
                     @method('DELETE')
 

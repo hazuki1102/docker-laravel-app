@@ -22,11 +22,16 @@
 
             <div class="text-center mt-4">
                 {{ $bookmarks->links() }}
+
             </div>
         @else
             <p class="text-center">ブックマークはまだありません。</p>
         @endif
-
+        <div class="text-center">
+            <a href="{{ route('mypage') }}" class="btn btn-outline-primary">
+                マイページに戻る
+            </a>
+        </div>
     </div>
 </main>
 @endsection

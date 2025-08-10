@@ -35,4 +35,11 @@ class User extends Authenticatable
     {
         return $this->is_admin === 1;
     }
+
+    public function likes() {
+        return $this->hasMany(\App\Models\Like::class);
+    }
+    public function likedPosts() {
+        return $this->belongsToMany(\App\Models\Post::class, 'likes')->withTimestamps();
+    }
 }

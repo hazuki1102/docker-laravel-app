@@ -29,5 +29,16 @@ class Post extends Model
         return $this->hasMany(Bookmark::class);
     }
 
+    public function likes() {
+    return $this->hasMany(\App\Models\Like::class);
+    }
+    public function likedUsers() {
+        return $this->belongsToMany(\App\Models\User::class, 'likes')->withTimestamps();
+    }
+    public function isLikedBy(?\App\Models\User $user): bool {
+        if (!$user) return false;
+        return $this->likes()->where('user_id', $user->id)->exists();
+    }
+
 }
 
