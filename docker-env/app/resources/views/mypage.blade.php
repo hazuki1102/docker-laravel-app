@@ -12,56 +12,72 @@
 
         <div class="row justify-content-around">
             <div class="col-md-4">
-                <div class="card mb-3">
-                    <div class="card-header text-center">
-                        <a href="{{ route('bookmark_list') }}" class="text-decoration-none">ブックマーク一覧</a>
+
+                <a href="{{ route('bookmark_list') }}" class="text-decoration-none">
+                    <div class="card mb-3" style="background-color: #fff; color: #000; border: 3px solid #000;">
+                        <div class="card-header d-flex align-items-center justify-content-center" style="background-color: #fff; color: #000; border-bottom: 1px solid #000;">
+                            <img src="{{ asset('images/bookmark_logo.png') }}" alt="ブックマーク一覧" style="width: 20px; height:30px; margin-right:6px;">
+                            <span>ブックマーク一覧</span>
+                        </div>
                     </div>
-                </div>
-                <div class="card">
-                    <div class="card-header text-center">
-                        <a href="{{ route('purchase_list') }}" class="text-decoration-none">購入製品一覧</a>
+                </a>
+
+                <a href="{{ route('purchase_list') }}" class="text-decoration-none">
+                    <div class="card mb-3" style="background-color: #fff; color: #000; border: 3px solid #000;">
+                        <div class="card-header d-flex align-items-center justify-content-center" style="background-color: #fff; color: #000; border-bottom: 1px solid #000;">
+                            <img src="{{ asset('images/purchase_logo.png') }}" alt="購入製品一覧" style="width: 30px; height:30px; margin-right:6px;">
+                            <span>購入製品一覧</span>
+                        </div>
                     </div>
-                </div>
+                </a>
+
+                <a href="{{ route('cart.list') }}" class="text-decoration-none">
+                    <div class="card" style="background-color: #fff; color: #000; border: 3px solid #000;">
+                        <div class="card-header d-flex align-items-center justify-content-center" style="background-color: #fff; color: #000; border-bottom: 1px solid #000;">
+                            <img src="{{ asset('images/cart_logo.png') }}" alt="カート" style="width: 30px; height:30px; margin-right:6px;">
+                            <span>カート</span>
+                        </div>
+                    </div>
+                </a>
             </div>
 
             <div class="col-md-4 text-center">
                 <div class="card mb-3 p-3">
-                    {{-- プロフィール画像 --}}
                     <img src="{{ asset('storage/' . ($user->icon_path ?? 'sample_icon.png')) }}" alt="プロフィール画像" class="rounded-circle mx-auto d-block" style="width: 140px; height: 140px; object-fit: cover;">
 
                 </div>
 
                 <div class="card mb-3 p-3">
-                    {{-- ユーザー名 --}}
                     <h4>{{ $user->username }}</h4>
                 </div>
 
                 <div class="card p-3">
-                    {{-- プロフィール文 --}}
                     <p>{{ $user->profile }}</p>
                 </div>
             </div>
 
             <div class="col-md-4">
-                <div class="card mb-3">
-                    <div class="card-header text-center">
-                        <a href="{{ route('create.create_select') }}" class="text-decoration-none">
-                            新規投稿する
-                        </a>
-                    </div>
-                </div>
 
-                <div class="card">
-                    <div class="card-header text-center">
-                        <a href="{{ route('user.edit', ['id' => $user->id]) }}">
-                            アカウント設定
-                        </a>
+                <a href="{{ route('create.create_select') }}" class="text-decoration-none">
+                    <div class="card mb-3" style="background-color: #fff; color: #000; border: 3px solid #000;">
+                        <div class="card-header d-flex align-items-center justify-content-center" style="background-color: #fff; color: #000; border-bottom: 1px solid #000;">
+                            <img src="{{ asset('images/post_logo.png') }}" alt="新規投稿する" style="width: 30px; height:30px; margin-right:6px;">
+                            <span>新規投稿する</span>
+                        </div>
                     </div>
-                </div>
+                </a>
+
+                <a href="{{ route('user.edit', ['id' => $user->id]) }}">
+                    <div class="card" style="background-color: #fff; color: #000; border: 3px solid #000;">
+                        <div class="card-header d-flex align-items-center justify-content-center" style="background-color: #fff; color: #000; border-bottom: 1px solid #000;">
+                            <img src="{{ asset('images/mypage_logo.png') }}" alt="アカウント設定" style="width: 50px; height:50px; margin-right:6px;">
+                            <span>アカウント設定</span>
+                        </div>
+                    </div>
+                </a>
             </div>
         </div>
 
-        {{-- 自分の投稿イラスト一覧 --}}
         <div class="row justify-content-center mt-4">
             <div class="col-md-8">
                 <div class="card p-3">

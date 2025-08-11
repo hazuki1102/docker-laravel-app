@@ -12,18 +12,26 @@
 
     <div class="row justify-content-around">
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <a href="{{ route('create.create_post') }}" class="text-center">[イラスト投稿のみ]</a>
-                </div>
-            </div>
+                <a href="{{ route('create.create_post') }}" class="text-decoration-none">
+                    <div class="card mb-3" style="background-color: #fff; color: #000; border: 1px solid #000;">
+                        <div class="card-header d-flex align-items-center justify-content-center" style="background-color: #fff; color: #000; border-bottom: 1px solid #000;">
+                            <span>イラスト投稿のみ</span>
+                        </div>
+                    </div>
+                </a>
         </div>
+
+
+
+
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <a href="{{ route('create.create_product') }}" class="text-center">[素材販売/頒布]</a>
-                </div>
-            </div>
+                    <a href="{{ route('create.create_product') }}" class="text-decoration-none">
+                        <div class="card mb-3" style="background-color: #fff; color: #000; border: 1px solid #000;">
+                            <div class="card-header d-flex align-items-center justify-content-center" style="background-color: #fff; color: #000; border-bottom: 1px solid #000;">
+                                <span>素材販売/頒布</span>
+                            </div>
+                        </div>
+                    </a>
         </div>
     </div>
 </main>

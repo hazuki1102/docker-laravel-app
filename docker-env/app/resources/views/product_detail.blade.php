@@ -63,6 +63,16 @@
                 </div>
             </div>
 
+            {{-- カートに入れるボタン --}}
+            <div class="row mb-4">
+                <div class="col">
+                    <form action="{{ route('cart.add', $product->id) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-success btn-block">カートに入れる</button>
+                    </form>
+                </div>
+            </div>
+
         </div>
     </div>
 </main>

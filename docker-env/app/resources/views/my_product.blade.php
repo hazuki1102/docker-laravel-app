@@ -65,10 +65,10 @@
                 <div class="col">
                     <a href="{{ url()->previous() }}" class="btn btn-secondary btn-block">戻る</a>
                 </div>
-                {{-- 編集機能を後で作る場合はこちらを有効化 --}}
-                {{-- <div class="col">
+
+                <div class="col">
                     <a href="{{ route('product.edit', $product->id) }}" class="btn btn-primary btn-block">編集する</a>
-                </div> --}}
+                </div>
             </div>
 
         </div>

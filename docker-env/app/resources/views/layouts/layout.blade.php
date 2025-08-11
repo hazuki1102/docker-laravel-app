@@ -31,9 +31,12 @@
                     </a>
                 </div>
 
-                <form action="{{ route('search.post_search') }}" method="GET" style="max-width: 700px; flex-grow: 1;" class="d-flex align-items-center ms-4">
+                <form action="{{ route('search.post_search') }}" method="GET" style="max-width: 650px; flex-grow: 1;" class="d-flex align-items-center ms-4">
                     <input type="text" name="keyword" placeholder="検索ワードを入力" class="form-control me-2" style="flex-grow: 1;">
-                    <button class="btn btn-outline-secondary" style="min-width: 80px; white-space: nowrap;">さがす</button>
+                    <button class="btn btn-outline-secondary" style="min-width: 80px; white-space: nowrap;">
+                        さがす
+                        <img src="{{ asset('images/sarch_logo.png') }}" alt="さがす" style="width: 20px; height:20px; margin-right:6px;">
+                    </button>
                 </form>
 
 

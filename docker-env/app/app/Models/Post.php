@@ -12,6 +12,8 @@ class Post extends Model
         'title',
         'body',
         'image_path',
+        'hashtags',
+        'materials',
     ];
 
     public function user()

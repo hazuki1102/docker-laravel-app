@@ -39,6 +39,13 @@ Route::get('/purchase_list', function () {
     return view('purchase_list');
 })->name('purchase_list');
 
+// カート機能
+Route::middleware('auth')->group(function () {
+    Route::post('/cart/add/{id}', 'CartController@add')->name('cart.add');
+    Route::get('/cart_list', 'CartController@index')->name('cart.list');
+});
+
+
 
 Route::middleware('auth')->group(function () {
 
@@ -60,11 +67,19 @@ Route::middleware('auth')->group(function () {
 
     // 投稿の編集
     Route::get('/post/{id}/edit', 'PostController@edit')->name('post.edit');
-    Route::post('/post/{id}/edit_conf', 'PostController@editConf')->name('post.edit_conf');
+    Route::post('/post/{id}/edit_conf', 'PostController@postEditConf')->name('post.edit_conf');
+    Route::put('/post/{id}', 'PostController@updatePost')->name('post.update');
+
+    Route::get('/product/{id}/edit', 'PostController@editProduct')->name('product.edit');
+    Route::post('/product/{id}/edit_conf', 'PostController@productEditConf')->name('product.edit_conf');
+    Route::put('/product/{id}', 'PostController@updateProduct')->name('product.update');
+
 
     // 投稿削除
     Route::get('/post/{id}/delete_conf', 'PostController@deletePostConf')->name('post_delete_conf');
     Route::delete('/post/{id}', 'PostController@destroy')->name('post.delete');
+    Route::get('/product/{id}/delete_conf', 'PostController@deletePostConf')->name('product_delete_conf');
+    Route::delete('/product/{id}', 'PostController@destroyProduct')->name('product.delete');
 
     // コメント
     Route::post('/post/{id}/comment', 'CommentController@store')->name('comments.store');
@@ -74,7 +89,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/bookmarks', 'BookmarkController@index')->name('bookmark_list');
 
     // いいね
-    Route::post('/posts/{post}/like', 'PostLikeController@toggle')->name('posts.like');
+    Route::middleware('auth')->group(function () {
+        Route::post('/posts/{post}/like', 'PostLikeController@toggle')->name('posts.like');
+        Route::post('/products/{product}/like', 'ProductLikeController@toggle')->name('products.like');
+    });
+
 
     // アカウント編集
     Route::get('/user/edit', 'PostController@editAccount')->name('user.edit');

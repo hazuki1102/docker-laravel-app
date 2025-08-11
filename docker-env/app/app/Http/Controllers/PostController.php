@@ -315,25 +315,92 @@ class PostController extends Controller
         return view('user.delete_conf', compact('user'));
     }
 
-    public function deletePostConf($id)
-    {
-        $post = Post::findOrFail($id);
-        return view('edit.post_delete_conf', compact('post'));
-    }
 
     public function search(Request $request)
     {
-        $keyword = $request->input('keyword');
+        $validated = $request->validate([
+            'title'     => 'nullable|string|max:100',
+            'username'  => 'nullable|string|max:100',
+            'body'      => 'nullable|string|max:500',
+            'type'      => 'nullable|in:all,post,product',
+            'date_from' => 'nullable|date',
+            'date_to'   => 'nullable|date',
+            'keyword'   => 'nullable|string|max:100',
+        ]);
 
-        if (!empty($keyword)) {
-            $posts = Post::where('title', 'like', "%{$keyword}%")
-                        ->orWhere('body', 'like', "%{$keyword}%")
-                        ->paginate(10);
+        $title    = trim($validated['title']    ?? '');
+        $username = trim($validated['username'] ?? '');
+        $body     = trim($validated['body']     ?? '');
+        $type     = $validated['type']          ?? 'all';
+        $dateFrom = $validated['date_from']     ?? null;
+        $dateTo   = $validated['date_to']       ?? null;
+        $keyword  = trim($validated['keyword']  ?? '');
+
+        $esc = function ($v) { return addcslashes($v, '%_'); };
+
+        $postQ = \App\Models\Post::with('user')->select('id','user_id','title','image_path','created_at')
+            ->when($title   !== '', fn($q)=>$q->where('title','like','%'.$esc($title).'%'))
+            ->when($body    !== '', fn($q)=>$q->where('body','like','%'.$esc($body).'%'))
+            ->when($username!== '', fn($q)=>$q->whereHas('user', fn($uq)=>$uq->where('username','like','%'.$esc($username).'%')))
+            ->when($dateFrom,       fn($q)=>$q->whereDate('created_at','>=',$dateFrom))
+            ->when($dateTo,         fn($q)=>$q->whereDate('created_at','<=',$dateTo));
+
+        $productQ = \App\Models\Product::with('user')->select('id','user_id','title', DB::raw('file_path as image_path'), 'created_at')
+            ->when($title   !== '', fn($q)=>$q->where('title','like','%'.$esc($title).'%'))
+            ->when($username!== '', fn($q)=>$q->whereHas('user', fn($uq)=>$uq->where('username','like','%'.$esc($username).'%')))
+            ->when($dateFrom,       fn($q)=>$q->whereDate('created_at','>=',$dateFrom))
+            ->when($dateTo,         fn($q)=>$q->whereDate('created_at','<=',$dateTo));
+
+        if ($type === 'post') {
+            $col = $postQ->get()->each(fn($i)=>$i->type='post');
+        } elseif ($type === 'product') {
+            $col = $productQ->get()->each(fn($i)=>$i->type='product');
         } else {
-            $posts = Post::paginate(10);
+            $col = $postQ->get()->each(fn($i)=>$i->type='post')
+                ->merge($productQ->get()->each(fn($i)=>$i->type='product'));
         }
 
-        return view('search.post_search', compact('posts', 'keyword'));
+        $sorted = $col->sortByDesc('created_at')->values();
+        $page   = (int) $request->input('page', 1);
+        $per    = 10;
+        $paged  = $sorted->slice(($page-1)*$per, $per)->values();
+        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+            $paged, $sorted->count(), $per, $page,
+            ['path'=>$request->url(),'query'=>$request->query()]
+        );
+
+        $kwPaginator = null;
+        if ($keyword !== '') {
+            $pQ = \App\Models\Post::with('user')->select('id','user_id','title','image_path','created_at')
+                ->where(function($q) use($keyword,$esc){
+                    $q->where('title','like','%'.$esc($keyword).'%')
+                    ->orWhere('body','like','%'.$esc($keyword).'%')
+                    ->orWhereHas('user', fn($uq)=>$uq->where('username','like','%'.$esc($keyword).'%'));
+                })->get()->each(fn($i)=>$i->type='post');
+
+            $prdQ = \App\Models\Product::with('user')->select('id','user_id','title', DB::raw('file_path as image_path'), 'created_at')
+                ->where(function($q) use($keyword,$esc){
+                    $q->where('title','like','%'.$esc($keyword).'%')
+                    ->orWhereHas('user', fn($uq)=>$uq->where('username','like','%'.$esc($keyword).'%'));
+                })->get()->each(fn($i)=>$i->type='product');
+
+            $kw = $pQ->merge($prdQ)->sortByDesc('created_at')->values();
+
+            $kpage = (int) $request->input('kpage', 1);
+            $kper  = 12;
+            $kpaged = $kw->slice(($kpage-1)*$kper, $kper)->values();
+            $kwPaginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                $kpaged, $kw->count(), $kper, $kpage,
+                ['path'=>$request->url(),'pageName'=>'kpage','query'=>$request->query()]
+            );
+        }
+
+        return view('search.post_search', [
+            'posts'   => $paginator,
+            'filters' => compact('title','username','body','type','dateFrom','dateTo'),
+            'keyword' => $keyword,
+            'kwPosts' => $kwPaginator,
+        ]);
     }
 
     public function myPost($id)
@@ -396,6 +463,168 @@ class PostController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('home')->with('status', 'アカウントを削除しました。');
+    }
+
+// 素材編集フォーム
+    public function editProduct($id)
+    {
+        $product = Product::findOrFail($id);
+        if (auth()->id() !== $product->user_id) {
+            return redirect()->route('product.show', $id);
+        }
+        return view('edit.product_edit', compact('product'));
+    }
+
+    public function productEditConf(Request $request, $id)
+    {
+        $product = Product::findOrFail($id);
+        if (auth()->id() !== $product->user_id) {
+            return redirect()->route('product.show', $id);
+        }
+
+        $validated = $request->validate([
+            'title'   => 'required|string|max:30',
+            'caption' => 'nullable|string',
+            'tags'    => 'nullable|string|max:255',
+            'price'   => 'required|integer|min:0',
+            'file'    => 'nullable|file|max:10240',
+        ]);
+
+        if ($request->hasFile('file') && $request->file('file')->isValid()) {
+            $validated['tmp_file_path'] = $request->file('file')->store('tmp');
+        }
+
+        return view('edit.product_edit_conf', compact('product', 'validated'));
+    }
+
+    public function updateProduct(Request $request, $id)
+    {
+        $product = Product::findOrFail($id);
+        if (auth()->id() !== $product->user_id) {
+            return redirect()->route('product.show', $id);
+        }
+
+        $validated = $request->validate([
+            'title'   => 'required|string|max:30',
+            'caption' => 'nullable|string',
+            'tags'    => 'nullable|string|max:255',
+            'price'   => 'required|integer|min:0',
+            'file'    => 'nullable|file|max:10240',
+        ]);
+
+        // XSS対策
+        $validated['title']   = strip_tags($validated['title']);
+        $validated['caption'] = strip_tags($validated['caption'] ?? '');
+        $validated['tags']    = strip_tags($validated['tags'] ?? '');
+
+        if ($request->hasFile('file') && $request->file('file')->isValid()) {
+            $tmp = $request->file('file')->store('tmp');
+            $filename = basename($tmp);
+            $final = 'public/products/'.$filename;
+            Storage::move($tmp, $final);
+            $product->file_path = 'products/'.$filename;
+        }
+
+        $product->title   = $validated['title'];
+        $product->caption = $validated['caption'] ?? null;
+        $product->tags    = $validated['tags'] ?? null;
+        $product->price   = $validated['price'];
+        $product->save();
+
+        return redirect()->route('home', $product->id)->with('success', '素材を更新しました。');
+    }
+
+    public function deleteProductConf($id)
+    {
+        $product = Product::findOrFail($id);
+        if (auth()->id() !== $product->user_id) {
+            return redirect()->route('product.show', $id);
+        }
+        return view('edit.product_delete_conf', compact('product'));
+    }
+
+    public function destroyProduct($id)
+    {
+        $product = Product::findOrFail($id);
+        if (auth()->id() !== $product->user_id) {
+            return redirect()->route('product.show', $id);
+        }
+
+        $product->delete();
+
+        return redirect()->route('mypage')->with('success', '素材を削除しました。');
+    }
+
+    // 投稿の編集確認
+    public function postEditConf(Request $request, $id)
+    {
+        $post = Post::findOrFail($id);
+        if (auth()->id() !== $post->user_id) {
+            return redirect()->route('posts.show', $id);
+        }
+
+        $validated = $request->validate([
+            'image'     => 'nullable|image|max:10240',
+            'title'     => 'required|string|max:30',
+            'body'      => 'nullable|string',
+            'hashtags'  => 'nullable|string',
+            'materials' => 'nullable|string',
+        ]);
+
+        if ($request->hasFile('image') && $request->file('image')->isValid()) {
+            $tempPath  = $request->file('image')->store('tmp');
+            $imageData = base64_encode(Storage::get($tempPath));
+            $mimeType  = Storage::mimeType($tempPath);
+
+            $validated['temp_image_path'] = $tempPath;
+            $validated['image_base64']    = "data:$mimeType;base64,$imageData";
+        }
+
+        // XSS対策
+        $validated['title']     = strip_tags($validated['title']);
+        $validated['body']      = strip_tags($validated['body'] ?? '');
+        $validated['hashtags']  = strip_tags($validated['hashtags'] ?? '');
+        $validated['materials'] = strip_tags($validated['materials'] ?? '');
+
+        return view('edit.post_edit_conf', ['post' => $post, 'data' => $validated]);
+    }
+
+    // 投稿の更新
+    public function updatePost(Request $request, $id)
+    {
+        $post = Post::findOrFail($id);
+        if (auth()->id() !== $post->user_id) {
+            return redirect()->route('posts.show', $id);
+        }
+
+        $validated = $request->validate([
+            'title'        => 'required|string|max:30',
+            'body'         => 'nullable|string',
+            'hashtags'     => 'nullable|string',
+            'materials'    => 'nullable|string',
+            'temp_image_path' => 'nullable|string',
+        ]);
+
+        if (!empty($validated['temp_image_path']) && Storage::exists($validated['temp_image_path'])) {
+            $filename = basename($validated['temp_image_path']);
+            $final    = 'public/images/'.$filename;
+            Storage::move($validated['temp_image_path'], $final);
+            $post->image_path = str_replace('public/', '', $final);
+        }
+
+        $post->title     = strip_tags($validated['title']);
+        $post->body      = strip_tags($validated['body'] ?? '');
+        $post->hashtags  = strip_tags($validated['hashtags'] ?? '');
+        $post->materials = strip_tags($validated['materials'] ?? '');
+        $post->save();
+
+        return redirect()->route('home', $post->id)->with('success', '投稿を更新しました。');
+    }
+
+    public function deletePostConf($id)
+    {
+        $post = Post::findOrFail($id);
+        return view('edit.post_delete_conf', compact('post'));
     }
 
 }
