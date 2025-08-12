@@ -36,8 +36,8 @@
                 @endif
 
                 <div class="text-center mt-3">
-                    <button type="submit" class="btn btn-primary">更新する</button>
                     <a href="{{ route('product.edit', $product->id) }}" class="btn btn-secondary">戻る</a>
+                    <button type="submit" class="btn btn-primary">更新する</button>
                 </div>
             </form>
         </div>

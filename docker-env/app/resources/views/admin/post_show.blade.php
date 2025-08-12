@@ -10,18 +10,23 @@
             <p><strong>タイトル:</strong> {{ $post->title }}</p>
             <p><strong>本文:</strong> {{ $post->body }}</p>
             <p><strong>投稿者:</strong>
-                <a href="{{ route('users.show', $post->user->id) }}">
+                <a href="{{ route('admin.user_show', $post->user->id) }}">
                     {{ $post->user->username }}
                 </a>
             </p>
             <p><strong>ブックマーク数:</strong> {{ $post->bookmarks_count }}</p>
             <p><strong>投稿日時:</strong> {{ $post->created_at->format('Y-m-d H:i') }}</p>
 
-            @if ($post->image_url)
-                <div class="mt-3">
-                    <img src="{{ $post->image_url }}" class="img-fluid rounded" alt="投稿画像">
-                </div>
-            @endif
+                    @php
+                        $raw = $post->image_url ?? $post->image_path;
+                        if ($raw && \Illuminate\Support\Str::startsWith($raw, ['http://','https://'])) {
+                            $img = $raw;
+                        } else {
+                            $path = $raw ? ltrim(preg_replace('#^public/#','', $raw), '/') : null;
+                            $img  = $path ? \Storage::url($path) : asset('images/noimage.png');
+                        }
+                    @endphp
+                    <img src="{{ $img }}" alt="投稿画像" class="img-fluid rounded">
         </div>
     </div>
 
@@ -39,7 +44,15 @@
             @endforeach
         </ul>
     @endif
+    <form action="{{ route('admin.posts.destroy', $post->id) }}" method="POST" class="mt-3"
+        onsubmit="return confirm('この投稿を削除します。よろしいですか？');">
+        @csrf
+        @method('DELETE')
+        <button type="submit" class="btn btn-danger">投稿を削除する</button>
+    </form>
 
-    <a href="{{ route('post.list') }}" class="btn btn-secondary mt-3">← 投稿一覧に戻る</a>
+
+
+    <a href="{{ route('post_list') }}" class="btn btn-secondary mt-3">← 投稿一覧に戻る</a>
 </div>
 @endsection

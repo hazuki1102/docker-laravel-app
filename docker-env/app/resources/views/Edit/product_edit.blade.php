@@ -19,27 +19,36 @@
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-header text-center">素材ファイル</div>
-                    <div class="card-body text-center">
-                        <input type="file" name="file" id="fileInput">
-                        <p class="mt-2 mb-1">※変更しない場合はそのままでOK</p>
-                        @error('file')
+                        <div class="card-body text-center">
+                            <input type="file" name="file" id="fileInput">
+                            <p class="mt-2 mb-1">※変更しない場合はそのままでOK</p>
+                            @error('file')
                             <div class="text-danger">{{ $message }}</div>
-                        @enderror
+                            @enderror
 
-                        @php
-                            $isImage = preg_match('/\.(jpg|jpeg|png|gif)$/i', $product->file_path ?? '');
-                            $fileUrl = \Illuminate\Support\Str::startsWith($product->file_path, 'http')
-                                ? $product->file_path
-                                : asset($product->file_path);
-                        @endphp
-                        <div class="mt-3">
-                            @if($isImage)
-                                <img id="filePreview" src="{{ $fileUrl }}" alt="現在の素材画像" style="max-width:100%; border-radius:8px;">
-                            @else
-                                <p class="text-muted">現在のファイル: {{ basename($product->file_path) }}</p>
-                            @endif
+                            @php
+                                $raw = $product->file_path ?? null;
+
+                                if ($raw && \Illuminate\Support\Str::startsWith($raw, ['http://','https://'])) {
+                                    $fileUrl = $raw;
+                                } elseif ($raw && \Illuminate\Support\Str::startsWith($raw, ['/storage/'])) {
+                                    $fileUrl = $raw;
+                                } else {
+                                    $path = $raw ? ltrim(preg_replace('#^(public/|storage/)#', '', $raw), '/') : null;
+                                    $fileUrl = $path ? \Storage::url($path) : asset('images/noimage.png');
+                                }
+                            @endphp
+
+                            <div class="mt-3">
+                                <img id="filePreview"
+                                    src="{{ $fileUrl }}"
+                                    alt="現在の素材画像"
+                                    style="max-width:100%; border-radius:8px;">
+                                @if(!$raw)
+                                    <p class="text-muted mt-2">現在のファイルが見つかりません</p>
+                                @endif
+                            </div>
                         </div>
-                    </div>
                 </div>
             </div>
 

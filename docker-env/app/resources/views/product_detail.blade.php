@@ -15,9 +15,24 @@
         <div class="col-md-4">
             <div class="card">
                 <div class="card-header text-center">素材画像</div>
-                <div class="card-body text-center">
-                    <img src="{{ url($product->file_path) }}" alt="素材画像" class="img-fluid rounded">
-                </div>
+                    <div class="card-body text-center">
+                        @php
+                            $raw = $product->image_url ?? $product->file_path;
+
+                            if ($raw && \Illuminate\Support\Str::startsWith($raw, ['http://', 'https://'])) {
+                                $img = $raw;
+                            } elseif ($raw && \Illuminate\Support\Str::startsWith($raw, ['/storage/'])) {
+                                $img = $raw;
+                            } else {
+                                $path = $raw ? ltrim(preg_replace('#^(public/|storage/)#', '', $raw), '/') : null;
+                                $img  = $path ? \Storage::url($path) : asset('images/noimage.png');
+                            }
+                        @endphp
+
+                        <img src="{{ $img }}" alt="素材画像" class="img-fluid rounded">
+                    </div>
+
+
             </div>
         </div>
 
@@ -56,14 +71,20 @@
                     <a href="{{ url()->previous() }}" class="btn btn-secondary btn-block">戻る</a>
                 </div>
                 <div class="col">
-                    <form action="{{ route('bookmark.store', $product->id) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="btn btn-outline-primary btn-block">ブックマークする</button>
+                    @auth
+                    <form action="{{ route('products.bookmark.store', $product->id) }}" method="POST">
+                    @csrf
+                    <button type="submit" class="btn {{ !empty($isBookmarked) ? 'btn-outline-danger' : 'btn-outline-primary' }} btn-block">
+                        {{ !empty($isBookmarked) ? 'ブックマークを外す' : 'ブックマークする' }}
+                    </button>
                     </form>
+                    @else
+                    <a href="{{ route('login') }}" class="btn btn-outline-primary btn-block">ログインしてブックマーク</a>
+                    @endauth
+
                 </div>
             </div>
 
-            {{-- カートに入れるボタン --}}
             <div class="row mb-4">
                 <div class="col">
                     <form action="{{ route('cart.add', $product->id) }}" method="POST">

@@ -10,9 +10,19 @@
                 @if (!empty($data['image_base64']))
                     <img src="{{ $data['image_base64'] }}" alt="新しい投稿画像" style="max-width:100%;">
                 @else
-                    <img src="{{ asset($post->image_path) }}" alt="現在の投稿画像" style="max-width:100%;">
+                    @php
+                        $raw = $post->image_url ?? $post->image_path;
+                        if ($raw && \Illuminate\Support\Str::startsWith($raw, ['http://','https://'])) {
+                            $img = $raw;
+                        } else {
+                            $path = $raw ? ltrim(preg_replace('#^public/#','', $raw), '/') : null;
+                            $img  = $path ? \Storage::url($path) : asset('images/noimage.png');
+                        }
+                    @endphp
+                    <img src="{{ $img }}" alt="現在の投稿画像" style="max-width:100%;">
                 @endif
             </div>
+
 
             <div class="card-body">
                 <p><strong>タイトル:</strong> {{ $data['title'] }}</p>
@@ -33,8 +43,8 @@
                 @endif
 
                 <div class="text-center mt-3">
-                    <button type="submit" class="btn btn-primary">更新する</button>
                     <a href="{{ route('post.edit', $post->id) }}" class="btn btn-secondary">戻る</a>
+                    <button type="submit" class="btn btn-primary">更新する</button>
                 </div>
             </form>
         </div>

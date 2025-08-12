@@ -41,6 +41,5 @@ class Post extends Model
         if (!$user) return false;
         return $this->likes()->where('user_id', $user->id)->exists();
     }
-
 }
 

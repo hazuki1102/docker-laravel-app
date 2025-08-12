@@ -31,21 +31,28 @@ class PostLikeController extends Controller
 
     public function index()
     {
-        $posts = \App\Models\Post::with(['user'])
+        $posts = \App\Models\Post::with('user')
             ->withCount('likes')
             ->orderByDesc('created_at')
             ->paginate(20);
 
-        if (auth()->check()) {
-            $likedIds = auth()->user()
-                ->likedPosts()
-                ->pluck('posts.id')
-                ->toArray();
-        } else {
-            $likedIds = [];
-        }
+        $posts->getCollection()->transform(function ($p) {
+            $p->type = 'post';
+            return $p;
+        });
 
-        return view('home', compact('posts', 'likedIds'));
+        $likedPostIds = auth()->check()
+            ? auth()->user()->likedPosts()->pluck('posts.id')->toArray()
+            : [];
+
+        $likedProductIds = [];
+
+        return view('home', [
+            'posts'            => $posts,
+            'likedPostIds'     => $likedPostIds,
+            'likedProductIds'  => $likedProductIds,
+        ]);
     }
+
 
 }

@@ -14,10 +14,19 @@
 
         <div class="col-md-4">
             <div class="card">
-                <div class="card-header text-center">投稿画像</div>
                 <div class="card-body text-center">
-                    <img src="{{ url($post->image_path) }}" alt="投稿画像" class="img-fluid rounded">
+                    @php
+                        $raw = $post->image_url ?? $post->image_path;
+                        if ($raw && \Illuminate\Support\Str::startsWith($raw, ['http://','https://'])) {
+                            $img = $raw;
+                        } else {
+                            $path = $raw ? ltrim(preg_replace('#^public/#','', $raw), '/') : null;
+                            $img  = $path ? \Storage::url($path) : asset('images/noimage.png');
+                        }
+                    @endphp
+                    <img src="{{ $img }}" alt="投稿画像" class="img-fluid rounded">
                 </div>
+
             </div>
         </div>
 
@@ -56,10 +65,17 @@
                     <a href="{{ url()->previous() }}" class="btn btn-secondary btn-block">戻る</a>
                 </div>
                 <div class="col">
+                    @auth
                     <form action="{{ route('bookmark.store', $post->id) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="btn btn-outline-primary btn-block">ブックマークする</button>
+                    @csrf
+                    <button type="submit" class="btn {{ !empty($isBookmarked) ? 'btn-outline-danger' : 'btn-outline-primary' }} btn-block">
+                        {{ !empty($isBookmarked) ? 'ブックマークを外す' : 'ブックマークする' }}
+                    </button>
                     </form>
+                    @else
+                    <a href="{{ route('login') }}" class="btn btn-outline-primary btn-block">ログインしてブックマーク</a>
+                    @endauth
+
                 </div>
             </div>
 
@@ -90,7 +106,7 @@
                     <div class="mb-3">
                         <strong>{{ $comment->user->username }}</strong>
                         <small class="text-muted">（{{ $comment->created_at->format('Y/m/d H:i') }}）</small>
-                        <p class="mb-0">{{ $comment->content }}</p>
+                        <p class="mb-0">{{ $comment->body }}</p>
                         <hr>
                     </div>
                 @empty

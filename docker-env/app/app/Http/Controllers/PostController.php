@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class PostController extends Controller
 {
@@ -15,24 +16,21 @@ class PostController extends Controller
     public function index()
     {
         $posts = Post::with('user')
-            ->select('id', 'user_id', 'title', 'image_path', 'created_at')
+            ->select('id','user_id','title','image_path','created_at')
             ->get()
-            ->each(function ($item) {
-                $item->type = 'post';
-            });
+            ->each(function ($item) { $item->type = 'post'; });
 
         $products = Product::with('user')
-            ->select('id', 'user_id', 'title', DB::raw("file_path as image_path"), 'created_at')
+            ->select('id','user_id','title', DB::raw('file_path as image_path'), 'created_at')
             ->get()
-            ->each(function ($item) {
-                $item->type = 'product';
-            });
+            ->each(function ($item) { $item->type = 'product'; });
 
         $merged = $posts->merge($products)->sortByDesc('created_at')->values();
 
-        $currentPage = request()->input('page', 1);
-        $perPage = 10;
-        $paged = $merged->slice(($currentPage - 1) * $perPage, $perPage)->values();
+        $currentPage = (int) request('page', 1);
+        $perPage     = 10;
+        $paged       = $merged->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
         $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
             $paged,
             $merged->count(),
@@ -41,8 +39,18 @@ class PostController extends Controller
             ['path' => request()->url(), 'query' => request()->query()]
         );
 
-        return view('home', ['posts' => $paginator]);
+        $likedPostIds    = auth()->check()
+            ? auth()->user()->likes()->pluck('post_id')->toArray()
+            : [];
+        $likedProductIds = [];
+
+        return view('home', [
+            'posts'           => $paginator,
+            'likedPostIds'    => $likedPostIds,
+            'likedProductIds' => $likedProductIds,
+        ]);
     }
+
 
     public function create()
     {
@@ -87,6 +95,16 @@ class PostController extends Controller
         return redirect()->route('posts.index')->with('success', '投稿が完了しました。');
     }
 
+    public function postBack(Request $request)
+    {
+        return redirect()
+            ->route('create.create_post')
+            ->withInput($request->only([
+                'title','body','hashtags','materials','temp_image_path','image_base64'
+            ]));
+    }
+
+
     public function confirm(Request $request)
     {
         $validated = $request->validate([
@@ -115,8 +133,17 @@ class PostController extends Controller
 
     public function show($id)
     {
-        $post = Post::with(['comments.user'])->findOrFail($id);
-        return view('post_detail', compact('post'));
+        $post = \App\Models\Post::with(['comments.user'])->findOrFail($id);
+
+        $isBookmarked = false;
+        if (auth()->check()) {
+            $isBookmarked = DB::table('bookmarks')
+                ->where('user_id', auth()->id())
+                ->where('post_id', $post->id)
+                ->exists();
+        }
+
+        return view('post_detail', compact('post', 'isBookmarked'));
     }
 
     public function edit($id)
@@ -190,32 +217,42 @@ class PostController extends Controller
 
     public function postConf(Request $request)
     {
-        $validated = $request->validate([
-            'image' => 'required|image|max:10240',
-            'title' => 'required|string|max:30',
-            'body' => 'nullable|string',
-            'hashtags' => 'nullable|string',
-            'materials' => 'nullable|string',
+        $request->validate([
+            'image'           => 'nullable|image|max:10240',
+            'title'           => 'required|string|max:30',
+            'body'            => 'nullable|string',
+            'hashtags'        => 'nullable|string',
+            'materials'       => 'nullable|string',
+            'temp_image_path' => 'nullable|string',
         ]);
+
+        $validated = $request->only(['title','body','hashtags','materials']);
 
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             $tempPath = $request->file('image')->store('tmp');
-            $imageData = base64_encode(Storage::get($tempPath));
-            $mimeType = Storage::mimeType($tempPath);
-            $validated['temp_image_path'] = $tempPath;
-            $validated['image_base64'] = "data:$mimeType;base64,$imageData";
+        } elseif ($request->filled('temp_image_path') && \Storage::exists($request->input('temp_image_path'))) {
+            $tempPath = $request->input('temp_image_path');
         } else {
             return back()->withErrors(['image' => '画像のアップロードに失敗しました。'])->withInput();
         }
 
-        // XSS対策
-        $validated['title']     = strip_tags($validated['title']);
-        $validated['body']      = strip_tags($validated['body'] ?? '');
-        $validated['hashtags']  = strip_tags($validated['hashtags'] ?? '');
-        $validated['materials'] = strip_tags($validated['materials'] ?? '');
+        $imageData = base64_encode(\Storage::get($tempPath));
+        $mimeType  = \Storage::mimeType($tempPath);
 
-        return view('create.create_post_conf', ['data' => $validated]);
+        $data = array_merge($validated, [
+            'temp_image_path' => $tempPath,
+            'image_base64'    => "data:$mimeType;base64,$imageData",
+        ]);
+
+        // XSS 対策
+        $data['title']     = strip_tags($data['title']);
+        $data['body']      = strip_tags($data['body'] ?? '');
+        $data['hashtags']  = strip_tags($data['hashtags'] ?? '');
+        $data['materials'] = strip_tags($data['materials'] ?? '');
+
+        return view('create.create_post_conf', ['data' => $data]);
     }
+
 
     public function productConf(Request $request)
     {
@@ -282,7 +319,7 @@ class PostController extends Controller
 
         $request->session()->forget('product_data');
 
-        return redirect()->route('mypage')->with('success', '素材の投稿が完了しました。');
+        return redirect()->route('home')->with('success', '素材の投稿が完了しました。');
     }
 
     public function editConf(Request $request)
@@ -434,9 +471,17 @@ class PostController extends Controller
     public function showProduct($id)
     {
         $product = Product::with('user')->findOrFail($id);
-        return view('product_detail', compact('product'));
-    }
 
+        $isBookmarked = false;
+        if (auth()->check()) {
+            $isBookmarked = DB::table('bookmarks')
+                ->where('user_id', auth()->id())
+                ->where('product_id', $product->id)
+                ->exists();
+        }
+
+        return view('product_detail', compact('product','isBookmarked'));
+    }
     public function getImageUrlAttribute()
     {
         return $this->image_path ? Storage::url($this->image_path) : null;
@@ -552,7 +597,7 @@ class PostController extends Controller
 
         $product->delete();
 
-        return redirect()->route('mypage')->with('success', '素材を削除しました。');
+        return redirect()->route('home')->with('success', '素材を削除しました。');
     }
 
     // 投稿の編集確認
@@ -625,6 +670,30 @@ class PostController extends Controller
     {
         $post = Post::findOrFail($id);
         return view('edit.post_delete_conf', compact('post'));
+    }
+
+    public function destroy($id)
+    {
+        \Log::debug(__METHOD__, [
+    'post_id'       => $id,
+    'post_user_id'  => $post->user_id ?? null,
+    'auth_id'       => auth()->id(),
+    'auth_guard'    => auth()->getDefaultDriver(),
+    ]);
+        $post = Post::findOrFail($id);
+
+        if (auth()->id() !== $post->user_id) {
+            abort(403, 'この投稿を削除する権限がありません');
+        }
+
+        if ($post->image_path) {
+            Storage::disk('public')->delete($post->image_path);
+        }
+        $post->delete();
+
+        return redirect()
+            ->route('home')
+            ->with('status', '投稿を削除しました');
     }
 
 }

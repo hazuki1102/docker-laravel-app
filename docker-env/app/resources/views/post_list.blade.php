@@ -4,7 +4,7 @@
 <div class="container mt-4">
     <h2 class="mb-3 text-center">投稿検索</h2>
 
-    <form method="GET" action="{{ route('post.list') }}" class="mb-4">
+    <form method="GET" action="{{ route('post_list') }}" class="mb-4">
         <div class="input-group">
             <input type="text" name="keyword" class="form-control" placeholder="タイトルで検索" value="{{ request('keyword') }}">
             <button class="btn btn-primary">検索</button>
@@ -26,12 +26,12 @@
             @foreach ($posts as $post)
             <tr>
                 <td>{{ $post->id }}</td>
-                <td>{{ $post->user->name }}</td>
+                <td>{{ $post->user->username }}</td>
                 <td>{{ $post->title }}</td>
                 <td>{{ $post->bookmarks_count }}</td>
                 <td>{{ $post->created_at->format('Y-m-d H:i') }}</td>
                 <td>
-                    <a href="{{ route('posts.show', $post->id) }}" class="btn btn-sm btn-outline-secondary">詳細</a>
+                    <a href="{{ route('admin.post_show', $post->id) }}" class="btn btn-sm btn-outline-secondary">詳細</a>
                 </td>
             </tr>
             @endforeach

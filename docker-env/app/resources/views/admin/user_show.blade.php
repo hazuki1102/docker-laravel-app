@@ -35,7 +35,7 @@
                         <td>{{ $post->title }}</td>
                         <td>{{ $post->created_at->format('Y-m-d H:i') }}</td>
                         <td>
-                            <a href="{{ route('posts.show', $post->id) }}" class="btn btn-sm btn-outline-secondary">
+                            <a href="{{ route('admin.post_show', $post->id) }}" class="btn btn-sm btn-outline-secondary">
                                 詳細
                             </a>
                         </td>
@@ -44,7 +44,7 @@
             </tbody>
         </table>
     @endif
-    <form method="POST" action="{{ route('users.destroy', $user->id) }}"
+    <form method="POST" action="{{ route('admin.users.destroy', $user->id) }}"
       onsubmit="return confirm('このユーザーを削除します。よろしいですか？');">
     @csrf
     @method('DELETE')
@@ -54,6 +54,6 @@
     </button>
     </form>
 
-    <a href="{{ route('user.list') }}" class="btn btn-secondary mt-3">← ユーザー一覧に戻る</a>
+    <a href="{{ route('user_list') }}" class="btn btn-secondary mt-3">← ユーザー一覧に戻る</a>
 </div>
 @endsection

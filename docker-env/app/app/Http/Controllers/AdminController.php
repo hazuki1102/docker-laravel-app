@@ -1,12 +1,12 @@
 <?php
 
 namespace App\Http\Controllers;
+use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 use App\Models\Post;
 use App\Models\Product;
 use App\Models\Comment;
 use App\Models\Bookmark;
-
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
@@ -19,18 +19,26 @@ class AdminController extends Controller
 
     public function userList(Request $request)
     {
-        $keyword = $request->input('keyword');
+        $kw = trim($request->get('keyword', ''));
 
-        $query = User::withCount(['posts', 'bookmarks']);
-
-        if (!empty($keyword)) {
-            $query->where('name', 'like', "%{$keyword}%");
-        }
-
-        $users = $query->paginate(10);
+        $users = User::query()
+            ->when($kw !== '', function ($q) use ($kw) {
+                $q->where('username', 'like', "%{$kw}%");
+            })
+            ->withCount('posts')
+            ->select('users.*')
+            ->selectSub(function ($q) {
+                $q->from('bookmarks')
+                ->selectRaw('COUNT(*)')
+                ->whereColumn('bookmarks.user_id', 'users.id');
+            }, 'bookmarks_count')
+            ->orderByDesc('id')
+            ->paginate(20)
+            ->appends($request->query());
 
         return view('user_list', compact('users'));
     }
+
 
     public function postList(Request $request)
     {
@@ -51,14 +59,15 @@ class AdminController extends Controller
         {
             $user->loadCount(['posts','bookmarks'])
                 ->load(['posts' => fn($q) => $q->latest()]);
-            return view('user_show', compact('user'));
+            return view('admin.user_show', compact('user'));
         }
 
         public function showPost(Post $post)
         {
             $post->loadCount('bookmarks')->load(['user','comments.user']);
-            return view('post_show', compact('post'));
+            return view('admin.post_show', compact('post'));
         }
+
     public function destroyUser(User $user)
     {
         if (auth()->id() === $user->id) {
@@ -77,7 +86,26 @@ class AdminController extends Controller
             $user->delete();
         });
 
-        return redirect()->route('user.list')->with('success', 'ユーザーを削除しました。');
+        return redirect()->route('user_list')->with('success', 'ユーザーを削除しました。');
+    }
+
+    public function destroyPost(Post $post)
+    {
+        if (method_exists($post, 'comments')) {
+            $post->comments()->delete();
+        }
+        if (method_exists($post, 'bookmarks')) {
+            $post->bookmarks()->delete();
+        }
+
+        if (!empty($post->image_path)) {
+            Storage::disk('public')->delete($post->image_path);
+        }
+        $post->delete();
+
+        return redirect()
+            ->route('post_list')
+            ->with('status', '投稿を削除しました。');
     }
 
 }

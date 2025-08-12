@@ -15,9 +15,19 @@
         <div class="col-md-4">
             <div class="card">
                 <div class="card-header text-center">投稿画像</div>
-                <div class="card-body text-center">
-                    <img src="{{ url($post->image_path) }}" alt="投稿画像" class="img-fluid rounded">
-                </div>
+                    <div class="card-body text-center">
+                        @php
+                            $raw = $post->image_url ?? $post->image_path; // image_url があれば優先
+                            if ($raw && \Illuminate\Support\Str::startsWith($raw, ['http://','https://'])) {
+                                $img = $raw; // すでにフルURL
+                            } else {
+                                $path = $raw ? ltrim(preg_replace('#^public/#','',$raw), '/') : null;
+                                $img  = $path ? \Storage::url($path) : asset('images/noimage.png');
+                            }
+                        @endphp
+
+                        <img src="{{ $img }}" alt="投稿画像" class="img-fluid rounded">
+                    </div>
             </div>
         </div>
 

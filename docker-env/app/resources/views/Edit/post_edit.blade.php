@@ -19,16 +19,27 @@
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-header text-center">投稿画像</div>
-                    <div class="card-body text-center">
-                        <input type="file" name="image" accept="image/*" id="imageInput">
-                        <p class="mt-2 mb-1">※画像を変更しない場合はそのままでOK</p>
-                        @error('image')
-                            <div class="text-danger">{{ $message }}</div>
-                        @enderror
-                        <div class="mt-3">
-                            <img id="imagePreview" src="{{ url($post->image_path) }}" alt="現在の投稿画像" style="max-width:100%;">
+                        <div class="card-body text-center">
+                            <input type="file" name="image" accept="image/*" id="imageInput">
+                            <p class="mt-2 mb-1">※画像を変更しない場合はそのままでOK</p>
+                            @error('image')
+                                <div class="text-danger">{{ $message }}</div>
+                            @enderror
+
+                            @php
+                                $raw = $post->image_url ?? $post->image_path;
+                                if ($raw && \Illuminate\Support\Str::startsWith($raw, ['http://','https://'])) {
+                                    $img = $raw;
+                                } else {
+                                    $path = $raw ? ltrim(preg_replace('#^public/#','', $raw), '/') : null;
+                                    $img  = $path ? \Storage::url($path) : asset('images/noimage.png');
+                                }
+                            @endphp
+
+                            <div class="mt-3">
+                                <img id="imagePreview" src="{{ $img }}" alt="現在の投稿画像" style="max-width:100%;">
+                            </div>
                         </div>
-                    </div>
                 </div>
             </div>
 

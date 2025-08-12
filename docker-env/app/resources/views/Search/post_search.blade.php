@@ -47,7 +47,53 @@
       </div>
     </form>
 
-    @if(!empty($keyword))
+    @if(isset($posts) && $posts->count())
+      <div class="card shadow-sm mt-4">
+        <div class="card-header">
+          <h5 class="mb-0">詳細検索結果</h5>
+        </div>
+        <div class="card-body">
+          <div class="d-flex flex-wrap justify-content-center gap-3">
+            @foreach($posts as $post)
+              @php
+                $isProduct = ($post->type ?? null) === 'product' || $post instanceof \App\Models\Product;
+
+                $raw = $isProduct
+                  ? ($post->image_url ?? $post->image_path ?? $post->file_path ?? null)
+                  : ($post->image_url ?? $post->image_path ?? null);
+
+                if ($raw && \Illuminate\Support\Str::startsWith($raw, ['http://','https://'])) {
+                  $img = $raw;
+                } else {
+                  $path = $raw ? ltrim(preg_replace('#^(public/|storage/)#','', $raw), '/') : null;
+                  $img  = $path ? \Storage::url($path) : asset('images/noimage.png');
+                }
+
+                $detailUrl = $isProduct ? route('product.show', $post->id) : route('posts.show', $post->id);
+              @endphp
+
+              <div style="flex:0 0 18%; max-width:18%;" class="text-center">
+                <a href="{{ $detailUrl }}">
+                  <img src="{{ $img }}" alt="画像" class="img-thumbnail rounded"
+                       style="aspect-ratio:1/1; object-fit:cover;">
+                </a>
+                <div class="mt-1">
+                  <small class="d-block text-truncate">{{ $post->title }}</small>
+                  <small class="text-muted">{{ optional($post->user)->username }}</small>
+                </div>
+              </div>
+            @endforeach
+          </div>
+        </div>
+        <div class="text-center mt-3">
+          {{ method_exists($posts, 'appends') ? $posts->appends(request()->query())->links() : '' }}
+        </div>
+      </div>
+    @elseif(isset($posts))
+      <p class="text-center text-muted">条件に一致する結果はありません。</p>
+    @endif
+
+    @if(!empty($keyword) && isset($kwPosts))
       <div class="card shadow-sm mt-4">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="mb-0">キーワード検索結果：「{{ $keyword }}」</h5>
@@ -57,20 +103,27 @@
           <div class="d-flex flex-wrap justify-content-center gap-3">
             @forelse ($kwPosts as $post)
               @php
-                $img = \Illuminate\Support\Str::startsWith($post->image_path, 'http')
-                      ? $post->image_path : asset($post->image_path);
                 $isProduct = ($post->type ?? null) === 'product' || $post instanceof \App\Models\Product;
+                $raw = $isProduct
+                  ? ($post->image_url ?? $post->image_path ?? $post->file_path ?? null)
+                  : ($post->image_url ?? $post->image_path ?? null);
+                if ($raw && \Illuminate\Support\Str::startsWith($raw, ['http://','https://'])) {
+                  $img = $raw;
+                } else {
+                  $path = $raw ? ltrim(preg_replace('#^(public/|storage/)#','', $raw), '/') : null;
+                  $img  = $path ? \Storage::url($path) : asset('images/noimage.png');
+                }
                 $detailUrl = $isProduct ? route('product.show', $post->id) : route('posts.show', $post->id);
               @endphp
 
               <div style="flex:0 0 18%; max-width:18%;" class="text-center">
                 <a href="{{ $detailUrl }}">
                   <img src="{{ $img }}" alt="画像" class="img-thumbnail rounded"
-                      style="aspect-ratio:1/1; object-fit:cover;">
+                       style="aspect-ratio:1/1; object-fit:cover;">
                 </a>
                 <div class="mt-1">
                   <small class="d-block text-truncate">{{ $post->title }}</small>
-                  <small class="text-muted">{{ $post->user->username ?? '' }}</small>
+                  <small class="text-muted">{{ optional($post->user)->username }}</small>
                 </div>
               </div>
             @empty
@@ -80,11 +133,10 @@
         </div>
 
         <div class="text-center mt-3">
-          {{ $kwPosts->appends(request()->query())->links() }}
+          {{ method_exists($kwPosts, 'appends') ? $kwPosts->appends(request()->query())->links() : '' }}
         </div>
       </div>
     @endif
-
 
   </div>
 </main>

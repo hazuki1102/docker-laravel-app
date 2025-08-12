@@ -43,9 +43,20 @@
 
             <div class="col-md-4 text-center">
                 <div class="card mb-3 p-3">
-                    <img src="{{ asset('storage/' . ($user->icon_path ?? 'sample_icon.png')) }}" alt="プロフィール画像" class="rounded-circle mx-auto d-block" style="width: 140px; height: 140px; object-fit: cover;">
-
+                    @php
+                        $rawIcon = $user->icon_path ?? null;
+                        if ($rawIcon && \Illuminate\Support\Str::startsWith($rawIcon, ['http://','https://'])) {
+                            $icon = $rawIcon;
+                        } else {
+                            $iconPath = $rawIcon ? ltrim(preg_replace('#^public/#','', $rawIcon), '/') : null;
+                            $icon = $iconPath ? \Storage::url($iconPath) : asset('images/sample_icon.png');
+                        }
+                    @endphp
+                    <img src="{{ $icon }}" alt="プロフィール画像"
+                        class="rounded-circle mx-auto d-block"
+                        style="width: 140px; height: 140px; object-fit: cover;">
                 </div>
+
 
                 <div class="card mb-3 p-3">
                     <h4>{{ $user->username }}</h4>
@@ -113,11 +124,23 @@
                     <div class="posts-container">
                         @forelse ($posts as $post)
                             <div class="post-image-wrapper">
-                                <img src="{{ url($post->image_path) }}" alt="投稿画像">
-                                <div class="post-title" title="{{ $post->title }}">{{ $post->title }}</div>
+                                @php
+                                    $raw = $post->image_url ?? $post->image_path;
+                                    if ($raw && \Illuminate\Support\Str::startsWith($raw, ['http://','https://'])) {
+                                        $img = $raw;
+                                    } else {
+                                        $path = $raw ? ltrim(preg_replace('#^public/#','', $raw), '/') : null;
+                                        $img  = $path ? \Storage::url($path) : asset('images/noimage.png');
+                                    }
+                                @endphp
+
+                                <a href="{{ route('mypost.show', $post->id) }}" class="d-block text-decoration-none">
+                                    <img src="{{ $img }}" alt="投稿画像">
+                                    <div class="post-title" title="{{ $post->title }}">{{ $post->title }}</div>
+                                </a>
                             </div>
                         @empty
-                            <p class="text-center w-100">投稿がまだありません。</p>
+                        <p class="text-center w-100">投稿がまだありません。</p>
                         @endforelse
                     </div>
 

@@ -15,19 +15,22 @@
         <div class="col-md-4">
             <div class="card">
                 <div class="card-header text-center">素材ファイル</div>
-                <div class="card-body text-center">
-                    @php
-                        $ext = pathinfo($product->file_path, PATHINFO_EXTENSION);
-                        $isImage = in_array(strtolower($ext), ['jpg', 'jpeg', 'png', 'gif']);
-                        $fileUrl = asset($product->file_path);
-                    @endphp
+                    <div class="card-body text-center">
+                        @php
+                            $raw = $product->image_url ?? $product->file_path;
 
-                    @if ($isImage)
-                        <img src="{{ $fileUrl }}" alt="素材画像" class="img-fluid rounded">
-                    @else
-                        <a href="{{ $fileUrl }}" target="_blank">{{ basename($product->file_path) }} を開く</a>
-                    @endif
-                </div>
+                            if ($raw && \Illuminate\Support\Str::startsWith($raw, ['http://', 'https://'])) {
+                                $img = $raw;
+                            } elseif ($raw && \Illuminate\Support\Str::startsWith($raw, ['/storage/'])) {
+                                $img = $raw;
+                            } else {
+                                $path = $raw ? ltrim(preg_replace('#^(public/|storage/)#', '', $raw), '/') : null;
+                                $img  = $path ? \Storage::url($path) : asset('images/noimage.png');
+                            }
+                        @endphp
+
+                        <img src="{{ $img }}" alt="素材画像" class="img-fluid rounded">
+                    </div>
             </div>
         </div>
 
